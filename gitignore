@@ -1,0 +1,28 @@
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Logs
+*.log
+
+# Env files
+.env
+*.env
+
+# IDE/project files
+.vscode/
+.idea/
+*.iml
+
+# Build/Dist
+dist/
+build/

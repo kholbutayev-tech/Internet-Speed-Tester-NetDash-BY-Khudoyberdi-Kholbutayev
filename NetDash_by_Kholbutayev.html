@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NetDash by Khudoyberdi Kholbutayev — Privacy‑First Speed Test</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0b1220; --card:#121a2b; --border:#1f2a44; --text:#e8eefc; --muted:#9fb0d1;
+    --grad1:#22d3ee; --grad2:#a78bfa;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:radial-gradient(900px 600px at 10% 5%, rgba(34,211,238,.12), transparent 60%),
+                               radial-gradient(800px 500px at 90% 20%, rgba(167,139,250,.10), transparent 60%),
+                               linear-gradient(120deg, #0f172a, var(--bg));
+             color:var(--text); font: 16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial;}
+  .container{max-width:1100px;margin:0 auto;padding:16px}
+  .header{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .brandline{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .brand{font-weight:900;font-size:clamp(22px,4vw,34px);letter-spacing:.2px}
+  .pill{background:linear-gradient(90deg, rgba(34,211,238,.25), rgba(167,139,250,.25));border:1px solid rgba(255,255,255,.12);padding:4px 8px;border-radius:999px;font-size:12px}
+  .btn{background:linear-gradient(90deg, var(--grad1), var(--grad2));color:#0b1020;font-weight:800;border:none;
+       padding:10px 16px;border-radius:12px;cursor:pointer;box-shadow:0 10px 30px rgba(34,211,238,.18);}
+  .btn:active{transform:translateY(1px) scale(.99)}
+  .grid{display:grid;gap:12px}
+  @media (min-width: 720px){ .grid.cols-4{grid-template-columns:repeat(4,1fr)} .grid.cols-3{grid-template-columns:repeat(3,1fr)} }
+  @media (max-width: 719px){ .grid.cols-4, .grid.cols-3{grid-template-columns:1fr 1fr} }
+  @media (max-width: 460px){ .grid.cols-4, .grid.cols-3{grid-template-columns:1fr} }
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px}
+  .label{font-size:12px;color:var(--muted);margin-bottom:4px}
+  .value{font-weight:900;font-size:clamp(18px,4.5vw,36px)}
+  .sub{font-size:13px;color:var(--muted)}
+  .row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .switch{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:var(--muted);cursor:pointer}
+  .switch input{appearance:none;width:40px;height:22px;background:#27334f;border-radius:999px;position:relative;outline:none;transition:.2s}
+  .switch input:checked{background:linear-gradient(90deg, var(--grad1), var(--grad2))}
+  .switch input::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:.2s}
+  .switch input:checked::after{left:21px}
+  .charts{display:grid;gap:12px}
+  @media (min-width: 920px){ .charts{grid-template-columns:1fr 1fr 1fr} }
+  @media (max-width: 919px){ .charts{grid-template-columns:1fr} }
+  .note{font-size:12px;color:var(--muted);margin-top:6px}
+  .hidden{display:none}
+  footer{opacity:.7;font-size:12px;margin-top:16px;text-align:center}
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <div class="brandline">
+          <div class="brand">NetDash by Khudoyberdi Kholbutayev</div>
+          <span class="pill">privacy‑first</span>
+        </div>
+        <div class="sub">Check IP, ISP, latency, download & upload — minimal data by default.</div>
+      </div>
+      <div class="row">
+        <label class="switch" title="When off, only your IP is fetched.">
+          <input id="detailToggle" type="checkbox">
+          <span>Unlock details</span>
+        </label>
+        <button id="run" class="btn">Start Test</button>
+      </div>
+    </div>
+
+    <div class="grid cols-4" style="margin-top:12px">
+      <div class="card">
+        <div class="label">Public IP</div>
+        <div id="ip" class="value">—</div>
+        <div id="ipver" class="sub">Detecting…</div>
+      </div>
+      <div class="card">
+        <div class="label">ISP</div>
+        <div id="isp" class="value">Hidden</div>
+        <div id="asn" class="sub">—</div>
+      </div>
+      <div class="card">
+        <div class="label">Location</div>
+        <div id="loc" class="value">Hidden</div>
+        <div id="tz" class="sub">—</div>
+      </div>
+      <div class="card">
+        <div class="label">Connection (browser)</div>
+        <div id="conn" class="value">—</div>
+        <div id="downlink" class="sub">—</div>
+      </div>
+    </div>
+
+    <div class="charts" style="margin-top:12px">
+      <div class="card">
+        <div class="label">Latency (ms)</div>
+        <canvas id="latChart" height="150"></canvas>
+        <div class="note">Ping mix of endpoints to estimate round‑trip time.</div>
+      </div>
+      <div class="card">
+        <div class="label">Download (Mbps)</div>
+        <canvas id="downChart" height="150"></canvas>
+        <div class="note">Pulls 5–10MB chunks from Cloudflare speed test.</div>
+      </div>
+      <div class="card">
+        <div class="label">Upload (Mbps)</div>
+        <canvas id="upChart" height="150"></canvas>
+        <div class="note">Posts random payload to Cloudflare speed test.</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div class="row">
+        <div><b>Details (optional)</b> <span class="sub">— disabled by default</span></div>
+        <button id="toggleRaw" class="btn" style="padding:6px 12px;font-size:13px">Show Raw</button>
+      </div>
+      <pre id="raw" class="hidden" style="margin-top:10px;white-space:pre-wrap;overflow:auto;max-height:260px"></pre>
+      <div class="note">Endpoints: ipify.org (IP only), ipapi.co (geo only when enabled), cloudflare.com (speed). Your data isn’t stored by this page.</div>
+    </div>
+
+    <footer>© <span id="year"></span> Khudoyberdi Kholbutayev — NetDash</footer>
+  </div>
+
+<script>
+const sleep = (ms)=> new Promise(r=>setTimeout(r, ms));
+const mbps = (bytes, ms)=> (bytes*8)/(ms/1000)/1e6;
+function avg(a){ return a.reduce((x,y)=>x+y,0)/a.length }
+
+const runBtn = document.getElementById('run');
+const detailToggle = document.getElementById('detailToggle');
+const rawEl = document.getElementById('raw');
+document.getElementById('year').textContent = new Date().getFullYear();
+
+const ipEl = document.getElementById('ip'); const ipverEl = document.getElementById('ipver');
+const ispEl = document.getElementById('isp'); const asnEl = document.getElementById('asn');
+const locEl = document.getElementById('loc'); const tzEl = document.getElementById('tz');
+const connEl = document.getElementById('conn'); const downlinkEl = document.getElementById('downlink');
+
+const baseOpts = {responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, grid:{color:'rgba(255,255,255,.12)'}}, x:{grid:{color:'rgba(255,255,255,.06)'}}}};
+const latChart = new Chart(document.getElementById('latChart'), {type:'line', data:{labels:[], datasets:[{data:[], borderColor:'#22d3ee'}]}, options: baseOpts});
+const downChart = new Chart(document.getElementById('downChart'), {type:'line', data:{labels:[], datasets:[{data:[], borderColor:'#34d399'}]}, options: baseOpts});
+const upChart = new Chart(document.getElementById('upChart'), {type:'line', data:{labels:[], datasets:[{data:[], borderColor:'#f472b6'}]}, options: baseOpts});
+
+(function initConn(){
+  const nc = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if(nc){
+    connEl.textContent = (nc.effectiveType||'').toUpperCase() || '—';
+    downlinkEl.textContent = `Downlink: ${nc.downlink ?? '—'} Mb/s • RTT est: ${nc.rtt ?? '—'} ms`;
+    nc.addEventListener('change', initConn, {once:true});
+  } else {
+    connEl.textContent = 'Unknown';
+    downlinkEl.textContent = '—';
+  }
+})();
+
+async function getIP(){
+  try{ const v4 = await fetch('https://api.ipify.org?format=json').then(r=>r.json()); ipEl.textContent = v4.ip || '—'; }catch{ ipEl.textContent = '—'; }
+  try{ const v6 = await fetch('https://api64.ipify.org?format=json').then(r=>r.json()); ipverEl.textContent = (v6.ip && v6.ip.includes(':')) ? 'IPv6 available' : 'IPv6 not detected'; }catch{ ipverEl.textContent = 'IPv6 probe failed'; }
+}
+
+async function getDetailsIfAllowed(){
+  if(!detailToggle.checked){ ispEl.textContent='Hidden'; asnEl.textContent='—'; locEl.textContent='Hidden'; tzEl.textContent='—'; return; }
+  try{
+    const geo = await fetch('https://ipapi.co/json/').then(r=>r.json());
+    ispEl.textContent = geo.org || '—';
+    asnEl.textContent = `ASN: ${geo.asn || '—'}`;
+    locEl.textContent = [geo.city, geo.region, geo.country_name].filter(Boolean).join(', ') || '—';
+    tzEl.textContent = geo.timezone || '—';
+    rawEl.textContent = JSON.stringify({ip: ipEl.textContent, geo}, null, 2);
+  }catch(e){ ispEl.textContent='Lookup failed'; asnEl.textContent='—'; locEl.textContent='—'; tzEl.textContent='—'; }
+}
+
+async function latencyTest(samples=6){
+  const targets = [
+    'https://www.cloudflare.com/cdn-cgi/trace',
+    'https://speed.cloudflare.com/cdn-cgi/trace',
+    'https://api.ipify.org?format=json'
+  ];
+  const out=[];
+  for(let i=0;i<samples;i++){
+    const base = targets[i % targets.length];
+    const url = base + (base.includes('?')?'&':'?') + 'n=' + Math.random();
+    const t0 = performance.now();
+    try{ await fetch(url, {cache:'no-store'}); }catch{}
+    const t1 = performance.now();
+    const ms = Math.max(0, t1 - t0);
+    out.push(ms);
+    latChart.data.labels.push(String(i+1));
+    latChart.data.datasets[0].data.push(Number(ms.toFixed(1)));
+    latChart.update();
+  }
+  return {avg:Number(avg(out).toFixed(1)), raw: out};
+}
+
+async function downloadTest(rounds=4){
+  const res=[];
+  for(let i=0;i<rounds;i++){
+    const size = (i%2===0)? 5_000_000 : 10_000_000;
+    const url=`https://speed.cloudflare.com/__down?bytes=${size}&nocache=${Math.random()}`;
+    const t0=performance.now();
+    try{ await fetch(url,{cache:'no-store'}).then(r=>r.arrayBuffer()); }catch{}
+    const t1=performance.now();
+    const s=mbps(size, t1-t0);
+    res.push(s);
+    downChart.data.labels.push(`${(size/1e6).toFixed(0)}MB`);
+    downChart.data.datasets[0].data.push(Number(s.toFixed(2)));
+    downChart.update();
+  }
+  return {avg:Number(avg(res).toFixed(2)), raw:res};
+}
+
+async function uploadTest(rounds=3){
+  const res=[];
+  for(let i=0;i<rounds;i++){
+    const size=2_000_000*(i+1);
+    const payload=new Uint8Array(size); crypto.getRandomValues(payload);
+    const t0=performance.now();
+    try{ await fetch('https://speed.cloudflare.com/__up', {method:'POST', body: payload, headers:{'Content-Type':'application/octet-stream'}});}catch{}
+    const t1=performance.now();
+    const s=mbps(size, t1-t0);
+    res.push(s);
+    upChart.data.labels.push(`${(size/1e6).toFixed(0)}MB`);
+    upChart.data.datasets[0].data.push(Number(s.toFixed(2)));
+    upChart.update();
+  }
+  return {avg:Number(avg(res).toFixed(2)), raw:res};
+}
+
+async function run(){
+  runBtn.disabled=true; runBtn.textContent='Testing…';
+  for (const ch of [latChart, downChart, upChart]){ ch.data.labels=[]; ch.data.datasets[0].data=[]; ch.update(); }
+  await getIP(); await getDetailsIfAllowed();
+  const lat=await latencyTest(); const down=await downloadTest(); const up=await uploadTest();
+  rawEl.textContent = "Summary:\n" + JSON.stringify({latency_ms_avg:lat.avg, download_mbps_avg:down.avg, upload_mbps_avg:up.avg}, null, 2);
+  runBtn.disabled=false; runBtn.textContent='Run Again';
+}
+document.getElementById('toggleRaw').addEventListener('click', ()=> rawEl.classList.toggle('hidden'));
+detailToggle.addEventListener('change', getDetailsIfAllowed);
+runBtn.addEventListener('click', run);
+getIP();
+</script>
+</body>
+</html>
