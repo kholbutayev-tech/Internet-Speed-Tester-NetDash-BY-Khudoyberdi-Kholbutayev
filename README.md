@@ -3,6 +3,8 @@
 ***Hello and Welcome to my small project***  
 ***For Advanced usage please use python server if Python is pre‑installed on your device***
 
+![NetDash Screenshot](images/file.png)
+
 ```
 python -m http.server 5500
 # It uses your local Python to host a simple HTTP server on port 5500
@@ -47,7 +49,7 @@ python -m http.server 5500
 
 ## Files
 - `NetDash_by_Kholbutayev.html` — single‑file app (privacy‑first build).
-![NetDash Screenshot](images/file.png)
+
 
 ## Privacy
 - By default, only your **public IP** is fetched.
