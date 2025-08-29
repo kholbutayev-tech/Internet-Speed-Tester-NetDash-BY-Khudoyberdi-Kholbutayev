@@ -47,6 +47,7 @@ python -m http.server 5500
 
 ## Files
 - `NetDash_by_Kholbutayev.html` — single‑file app (privacy‑first build).
+![NetDash Screenshot](images/file.png)
 
 ## Privacy
 - By default, only your **public IP** is fetched.
